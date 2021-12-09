@@ -1,7 +1,7 @@
 import inspect
 
 from .colours import colGetter as col
-from .context import addToContext
+from .context import addToContext, getContext
 from .tabulated_writer import tabbuffer
 from .timer import DurationTimer
 
@@ -25,6 +25,8 @@ class BaseStep:
     """
 
     def __init__(self, *args):
+        self.config = None
+
         self.wasrun = False
         self.result = None
 
@@ -36,7 +38,14 @@ class BaseStep:
 
         addToContext(self)
 
+        context = getContext()
+        if context is not None:
+            self.configure(context.config)
+
         self.bind(*args)
+
+    def configure(self, config):
+        pass
 
     def alias(self, alias):
         """Sets an alias name on the step that will show when printing it.

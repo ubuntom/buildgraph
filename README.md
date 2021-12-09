@@ -94,16 +94,35 @@ Buildgraph will check for loops in the graph before running it and will raise an
 The `@buildgraph` decorator builds a graph where every node is reachable from the final node.
 
 ```
-@buildgraph
+@buildgraph()
 def addergraph():
     a = Adder(0)
     b = Adder(1)
     c = Adder(2)
 
-addergraph.run()  # This will run all 3 steps
+addergraph().run()  # This will run all 3 steps
 ```
 
 If the steps don't have dependencies the execution order isn't guaranteed, but generally the steps that are defined first will be run first unless another dependency enforces a different order.
+
+### Parameterised graphs
+
+Graphs can take input which will be used to construct it
+
+```
+@buildgraph()
+def loopinggraph(loops):
+    a = Adder(0)
+    for i in range(loops-1):
+        a = Adder(a)
+    return a
+
+looponce = loopinggraph(1)
+looponce.run()  # 1
+
+loopmany = loopinggraph(5)
+loopmany.run()  # 5
+```
 
 
 ### Returning from a graph
@@ -111,13 +130,13 @@ If the steps don't have dependencies the execution order isn't guaranteed, but g
 Graphs can return results from a step too.
 
 ```
-@buildgraph
+@buildgraph()
 def addergraph():
     a = Adder(0)
     b = Adder(a)
     return b
 
-result = addergraph.run() 
+result = addergraph().run() 
 print(result)  # 1
 ```
 
@@ -127,6 +146,27 @@ print(result)  # 1
 All steps must inherit from `BaseStep` and implement an `execute` method.
 
 You can see example steps from `src/steps.py`. These steps can also be imported and used in code.
+
+### Shared Config
+
+Steps can receive a config object before running that other steps can share.
+
+```
+class ConfigStep(BaseStep):
+    def configure(self, config):
+        self.username = config['username']
+
+    def execute(self):
+        print(f"My name is {self.username}")
+
+@buildgraph()
+def getGraph():
+    ConfigStep()
+    ConfigStep()
+
+graph = getGraph(config = {"username": "bob"})
+graph.run()  # Both steps will print 'bob'
+```
 
 
 ## Type checking

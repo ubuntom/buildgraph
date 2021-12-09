@@ -1,3 +1,5 @@
+from dataclasses import dataclass
+
 import pytest
 
 from buildgraph import (
@@ -22,6 +24,14 @@ class RunStep(BaseStep):
 class AddStep(BaseStep):
     def execute(self, a, b):
         return a + b
+
+
+class ConfigStep(BaseStep):
+    def configure(self, config):
+        self.name = config["name"]
+
+    def execute(self):
+        return f"My name is {self.name}"
 
 
 class NeedsIntStep(BaseStep):
@@ -100,12 +110,13 @@ def test_after_dependencies():
 
 
 def test_graph_builder():
-    @buildgraph
-    def test():
+    @buildgraph()
+    def getTest():
         ReturnStep(None).alias("A")
         b = ReturnStep(4).alias("B")
         return ReturnStep(b).alias("C")
 
+    test = getTest()
     order = test.getExecutionOrder()
     assert len(order) == 4
     assert order[0]._alias == "A"
@@ -142,3 +153,28 @@ def test_type_length_mismatch_long():
 def test_type_length_mismatch_short():
     with pytest.raises(ParameterLengthException):
         NeedsIntStep()
+
+
+def test_param_graph():
+    @buildgraph()
+    def loopinggraph(loops):
+        a = AddStep(0, 1)
+        for i in range(loops - 1):
+            a = AddStep(a, 1)
+        return a
+
+    looponce = loopinggraph(1)
+    assert looponce.run() == 1
+
+    loopmany = loopinggraph(5)
+    assert loopmany.run() == 5
+
+
+def test_config_graph(capsys):
+    @buildgraph()
+    def getConfiggraph():
+        return ConfigStep()
+
+    graph = getConfiggraph(config={"name": "bob"})
+
+    assert graph.run() == "My name is bob"
