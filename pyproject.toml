@@ -1,0 +1,24 @@
+[tool.poetry]
+name = "buildgraph"
+version = "0.0.2"
+authors = ["ubuntom"]
+description = "Tools for building"
+homepage = "https://github.com/ubuntom/buildgraph"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent"
+]
+license = "MIT"
+readme = "README.md"
+include = [
+    "LICENSE",
+]
+
+[tool.poetry.dependencies]
+# Updated Python version
+python = "^3.7"
+
+[build-system]
+requires = ["poetry>=1.1.0"]
+build-backend = "poetry.masonry.api"
