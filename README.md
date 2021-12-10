@@ -55,14 +55,14 @@ print(a.run())  # 1 - Step b won't be run
 Sometimes you'll need to run a step `a` before step `b`, but `a`'s output won't be used by `b`.
 
 ```
-class Printer(BaseStep):
+class printer(BaseStep):
     """
     Returns its input added to a small random number
     """
     def execute(self, msg):
         print(msg)
 
-p = Printer("Hi")
+p = printer("Hi")
 a = Adder(0).alias("a")
 b = Adder(a).alias("b").after(p)  # This ensures b will run after p
 b.run()

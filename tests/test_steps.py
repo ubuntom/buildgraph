@@ -208,10 +208,24 @@ def test_nested_steps():
         return AddStep(a, b)
 
     @buildgraph()
-    def getConfiggraph(n):
+    def getGraph(n):
         a = AddStep(1, 0)
         return moreSteps(a, n)
 
-    graph = getConfiggraph(2)
+    graph = getGraph(2)
 
     assert graph.run() == 3
+
+
+def test_sub_graph():
+    @buildgraph()
+    def getSubgraph(a, b):
+        return AddStep(a, b)
+
+    @buildgraph()
+    def getMainGraph(n):
+        s = ReturnStep(2)
+        subgraph = getSubgraph(n, s)
+        return AddStep(subgraph, 3)
+
+    assert getMainGraph(1).run() == 6

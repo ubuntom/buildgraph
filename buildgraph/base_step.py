@@ -2,6 +2,7 @@ import inspect
 
 from .colours import colGetter as col
 from .context import addToContext, getContext
+from .graph import Graph
 from .tabulated_writer import tabbuffer
 from .timer import DurationTimer
 
@@ -115,10 +116,21 @@ class BaseStep:
 
         return order_list
 
+    def getFullExecution(self):
+        steps = {self}
+        for step in self.after_deps:
+            steps.update(step.getFullExecution())
+        for step in self.bind_deps:
+            steps.update(step.getFullExecution())
+        return steps
+
     def getResult(self):
         if self.wasrun is False:
             self.callExecute()
         return self.result
+
+    def getResultType(self):
+        return inspect.signature(self.execute).return_annotation
 
     def callExecute(self):
         # Run after deps first
@@ -180,8 +192,6 @@ class BaseStep:
 
         sig = inspect.signature(self.execute)
 
-        print(len(sig.parameters), len(args))
-
         if len(sig.parameters) != len(args):
             raise ParameterLengthException(
                 f"{self} expects {len(sig.parameters)} but received {len(args)}"
@@ -191,10 +201,10 @@ class BaseStep:
             param = sig.parameters[param_name]
             arg_getter = lambda arg=arg: arg
             arg_type = type(arg)
-            if issubclass(type(arg), BaseStep):
+            if issubclass(type(arg), BaseStep) or type(arg) == Graph:
                 self.bind_deps.append(arg)
                 arg_getter = lambda arg=arg: arg.getResult()
-                arg_type = inspect.signature(arg.execute).return_annotation
+                arg_type = arg.getResultType()
 
             if param.annotation != inspect._empty and arg_type != inspect._empty:
                 if not issubclass(arg_type, param.annotation):
