@@ -1,34 +1,46 @@
 import functools
 
+from buildgraph.base_step import BaseStep
+
 from .context import getContext, makeContext
 from .steps import ResultAggregatingStep, StepSyncingStep
 
 
+class Graph:
+    def __init__(self, root, result):
+        self.root = root
+        self.result = result
+
+    def run(self):
+        self.root.run()
+        if self.result:
+            return self.result.getResult()
+
+    def __getattr__(self, attr):
+        return getattr(self.root, attr)
+
+
 def buildgraph():
-    """Builds a graph from a graph-defining function and returns the last step in that graph
-    """
+    """Builds a graph from a graph-defining function and returns the last step in that graph"""
+
     def decorator(func):
         @functools.wraps(func)
         def wrapper(*args, config=None, **kwargs):
             with makeContext(config) as context:
-                last = func(*args, **kwargs)
+                ret = func(*args, **kwargs)
 
-                if last is None:
-                    print(
-                        "Graph building function didn't return a step, so the last defined step will be the final step"
-                    )
-                    base = StepSyncingStep()
+                non_finals = set()
+                for step in context.steps:
+                    above = step.getExecutionOrder()[:-1]
+                    non_finals.update(above)
 
-                else:
-                    base = ResultAggregatingStep(last)
+                finals = [step for step in context.steps if step not in non_finals]
 
-                order = base.getExecutionOrder()
-                for step in context.steps[-1::-1]:
-                    if step not in order:
-                        base.after(step, front=True)
-                        order = base.getExecutionOrder()
+                root = finals[-1]
+                for step in finals[:-1]:
+                    root.after(step)
 
-                return base
+                return Graph(root, ret)
 
         return wrapper
 

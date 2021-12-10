@@ -118,10 +118,33 @@ def test_graph_builder():
 
     test = getTest()
     order = test.getExecutionOrder()
-    assert len(order) == 4
+    assert len(order) == 3
     assert order[0]._alias == "A"
-    assert order[-2]._alias == "C"
+    assert order[-1]._alias == "C"
 
+    assert test.run() == 4
+
+
+def test_graph_builder_no_ret():
+    @buildgraph()
+    def getTest():
+        ReturnStep(4)
+
+    test = getTest()
+    assert test.run() is None
+
+
+def test_graph_builder_ret_out_of_order():
+    @buildgraph()
+    def getTest():
+        a = ReturnStep(4).alias("a")
+        ReturnStep(5).alias("b")
+        return a
+
+    test = getTest()
+    order = test.getExecutionOrder()
+    assert order[0]._alias == "a"
+    assert order[1]._alias == "b"
     assert test.run() == 4
 
 
@@ -170,7 +193,7 @@ def test_param_graph():
     assert loopmany.run() == 5
 
 
-def test_config_graph(capsys):
+def test_config_graph():
     @buildgraph()
     def getConfiggraph():
         return ConfigStep()
@@ -178,3 +201,17 @@ def test_config_graph(capsys):
     graph = getConfiggraph(config={"name": "bob"})
 
     assert graph.run() == "My name is bob"
+
+
+def test_nested_steps():
+    def moreSteps(a, b):
+        return AddStep(a, b)
+
+    @buildgraph()
+    def getConfiggraph(n):
+        a = AddStep(1, 0)
+        return moreSteps(a, n)
+
+    graph = getConfiggraph(2)
+
+    assert graph.run() == 3

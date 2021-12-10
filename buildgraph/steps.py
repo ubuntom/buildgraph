@@ -5,20 +5,6 @@ from .base_step import BaseStep
 from .utils import execute_process_and_print
 
 
-class ResultAggregatingStep(BaseStep):
-    """Intended for internal use. Has a single step dependency which is immediately returned."""
-
-    def execute(self, stepResult):
-        return stepResult
-
-
-class StepSyncingStep(BaseStep):
-    """Intended for internal use. Has no dependencies and returns nothing."""
-
-    def execute(self):
-        return None
-
-
 class CommandStep(BaseStep):
     """Run a command and return the result of it as well as stdout and stderr logs.
 
