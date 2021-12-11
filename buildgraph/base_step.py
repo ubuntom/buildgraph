@@ -1,4 +1,6 @@
 import inspect
+import traceback
+from contextlib import ExitStack
 
 from .colours import colGetter as col
 from .context import addToContext, getContext
@@ -17,6 +19,15 @@ class TypeMismatchException(Exception):
 
 class ParameterLengthException(Exception):
     pass
+
+
+class StepFailedException(Exception):
+    def __init__(self, step, exc, args):
+        super().__init__(str(step))
+
+        self.step = step
+        self.exc = exc
+        self.args = args
 
 
 class BaseStep:
@@ -140,11 +151,17 @@ class BaseStep:
         # Get required args
         args = self.getArgs()
 
-        print(f"Executing step {self}")
+        print(f"{col.orange}Executing step {self}{col.clear}")
         with DurationTimer() as timer:
-            with tabbuffer():
-                self.result = self.execute(*args)
-                self.wasrun = True
+            try:
+                with tabbuffer():
+                    self.result = self.execute(*args)
+                    self.wasrun = True
+            except Exception as e:
+                with tabbuffer():
+                    print(traceback.format_exc())
+                print(f"{col.red}Failed{col.clear}")
+                raise StepFailedException(self, e, args) from None
 
         result_text = (
             self.result

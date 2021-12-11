@@ -1,11 +1,21 @@
 # Build Graph
 
+## Installing
+
+Install with `pip install buildgraph`
+
+Import with `from buildgraph import BaseStep, buildgraph`
+
+
+## Introduction
+
+
 Build Graph provides a set of tools to run build steps in order of their dependencies.
 
 Build graphs can be constructed by hand, or you can let the library construct the graph for you.
 
 In the following examples, we'll be using this step definition:
-```
+```python
 class Adder(BaseStep):
     """
     Returns its input added to a small random number
@@ -22,14 +32,14 @@ class Adder(BaseStep):
 
 Steps are defined by constructing a step definition and binding the required arguments.
 
-```
+```python
 # This will create a single 'Adder' step with input 5
 a = Adder(5)
 ```
 
 Step arguments can be other steps:
 
-```
+```python
 # This will provide the output from step a as input to step b
 a = Adder(0).alias("a")  # Set an alias to identify the steps
 b = Adder(a).alias("b")
@@ -37,7 +47,7 @@ b = Adder(a).alias("b")
 
 To run the steps, we pick the last step in the graph and call its `run` method.
 
-```
+```python
 ...
 result = b.run()
 print(result)  # 2
@@ -45,7 +55,7 @@ print(result)  # 2
 
 A step from anywhere in the graph can be run, but only that step's dependencies will be executed.
 
-```
+```python
 print(a.run())  # 1 - Step b won't be run
 ```
 
@@ -54,15 +64,15 @@ print(a.run())  # 1 - Step b won't be run
 
 Sometimes you'll need to run a step `a` before step `b`, but `a`'s output won't be used by `b`.
 
-```
-class printer(BaseStep):
+```python
+class Printer(BaseStep):
     """
     Returns its input added to a small random number
     """
     def execute(self, msg):
         print(msg)
 
-p = printer("Hi")
+p = Printer("Hi")
 a = Adder(0).alias("a")
 b = Adder(a).alias("b").after(p)  # This ensures b will run after p
 b.run()
@@ -75,7 +85,7 @@ The `after(*steps)` method specified steps that must be run first. If multiple s
 
 If a step is defined but not listed as a dependency it won't be run:
 
-```
+```python
 a = Adder(0).alias("a")
 b = Adder(1).alias("b")
 b.run()  # This won't run a
@@ -93,7 +103,7 @@ Buildgraph will check for loops in the graph before running it and will raise an
 
 The `@buildgraph` decorator builds a graph where every node is reachable from the final node.
 
-```
+```python
 @buildgraph()
 def addergraph():
     a = Adder(0)
@@ -109,7 +119,7 @@ If the steps don't have dependencies the execution order isn't guaranteed, but g
 
 Graphs can take input which will be used to construct it
 
-```
+```python
 @buildgraph()
 def loopinggraph(loops):
     a = Adder(0)
@@ -129,7 +139,7 @@ loopmany.run()  # 5
 
 Graphs can return results from a step too.
 
-```
+```python
 @buildgraph()
 def addergraph():
     a = Adder(0)
@@ -151,7 +161,7 @@ You can see example steps from `src/steps.py`. These steps can also be imported 
 
 Steps can receive a config object before running that other steps can share.
 
-```
+```python
 class ConfigStep(BaseStep):
     def configure(self, config):
         self.username = config['username']
@@ -169,6 +179,14 @@ graph.run()  # Both steps will print 'bob'
 ```
 
 
+## Exception Handling
+
+Exceptions thrown inside steps will be caught, printed and the re-raised inside a `StepFailedException` object alongwith the 
+step and the arguments passed the the execute function.
+
+After handling an exception execution of further steps will stop.
+
+
 ## Type checking
 
 Buildgraph will perform type checking when the graph is built if the `execute` method has type annotations on its parameters.
@@ -177,3 +195,8 @@ Buildgraph will perform type checking when the graph is built if the `execute` m
 ## Configuring buildgraph
 
 By default buildgraph prints coloured output. You can disable this with `buildgraph.setColor(False)`.
+
+
+## Examples
+
+See the scripts in `examples/` for examples for more complex graphs.

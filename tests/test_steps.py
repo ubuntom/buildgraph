@@ -9,6 +9,8 @@ from buildgraph import (
     TypeMismatchException,
     buildgraph,
 )
+from buildgraph.base_step import StepFailedException
+from buildgraph.graph import EmptyGraphException
 
 
 class ReturnStep(BaseStep):
@@ -229,3 +231,35 @@ def test_sub_graph():
         return AddStep(subgraph, 3)
 
     assert getMainGraph(1).run() == 6
+
+
+def test_exception():
+    class StepException(Exception):
+        pass
+
+    class ExceptionStep(BaseStep):
+        def execute(self, a):
+            raise StepException(str(a))
+
+    @buildgraph()
+    def getGraph():
+        ExceptionStep(0)
+        ExceptionStep(1)
+
+    with pytest.raises(StepFailedException) as einfo:
+        g = getGraph().run()
+
+    e = einfo.value
+
+    assert type(e.exc) == StepException
+    assert e.args == (0,)
+    assert str(e.step) == "<ExceptionStep>"
+
+
+def test_empty_graph():
+    @buildgraph()
+    def getGraph():
+        pass
+
+    with pytest.raises(EmptyGraphException):
+        getGraph()
