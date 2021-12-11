@@ -18,7 +18,7 @@ In the following examples, we'll be using this step definition:
 ```python
 class Adder(BaseStep):
     """
-    Returns its input added to a small random number
+    Returns its input plus 1
     """
     def execute(self, n):
         new = n + 1
@@ -66,9 +66,6 @@ Sometimes you'll need to run a step `a` before step `b`, but `a`'s output won't 
 
 ```python
 class Printer(BaseStep):
-    """
-    Returns its input added to a small random number
-    """
     def execute(self, msg):
         print(msg)
 
