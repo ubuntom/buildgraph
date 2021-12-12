@@ -1,7 +1,7 @@
 import inspect
 import traceback
-from contextlib import ExitStack
 
+from .binding import Binding
 from .colours import colGetter as col
 from .context import addToContext, getContext
 from .graph import Graph
@@ -10,14 +10,6 @@ from .timer import DurationTimer
 
 
 class CircularDependencyException(Exception):
-    pass
-
-
-class TypeMismatchException(Exception):
-    pass
-
-
-class ParameterLengthException(Exception):
     pass
 
 
@@ -36,15 +28,13 @@ class BaseStep:
     Subclasses should implement an `execute` method.
     """
 
-    def __init__(self, *args):
+    def __init__(self, *args, **kwargs):
         self.config = None
 
         self.wasrun = False
         self.result = None
 
         self.after_deps = []
-        self.bind_deps = []
-        self.arg_getters = []
 
         self._alias = None
 
@@ -54,7 +44,7 @@ class BaseStep:
         if context is not None:
             self.configure(context.config)
 
-        self.bind(*args)
+        self.binding = Binding(*args, **kwargs).bind(self.execute)
 
     def configure(self, config):
         pass
@@ -65,12 +55,6 @@ class BaseStep:
         """
         self._alias = alias
         return self
-
-    def setArgGetters(self, arg_getters):
-        self.arg_getters = arg_getters
-
-    def getArgs(self):
-        return [getter() for getter in self.arg_getters]
 
     def __repr__(self):
         msg = f"<{self.__class__.__name__}"
@@ -120,7 +104,7 @@ class BaseStep:
         for dep in self.after_deps:
             dep.getExecutionOrder(order_list, downstream)
 
-        for dep in self.bind_deps:
+        for dep in self.binding.bind_deps:
             dep.getExecutionOrder(order_list, downstream)
 
         order_list.append(self)
@@ -131,7 +115,7 @@ class BaseStep:
         steps = {self}
         for step in self.after_deps:
             steps.update(step.getFullExecution())
-        for step in self.bind_deps:
+        for step in self.binding.bind_deps:
             steps.update(step.getFullExecution())
         return steps
 
@@ -148,14 +132,17 @@ class BaseStep:
         for dep in self.after_deps:
             dep.getResult()
 
+        for dep in self.binding.bind_deps:
+            dep.getResult()
+
         # Get required args
-        args = self.getArgs()
+        args, kwargs = self.binding.evaluateArgs()
 
         print(f"{col.orange}Executing step {self}{col.clear}")
         with DurationTimer() as timer:
             try:
                 with tabbuffer():
-                    self.result = self.execute(*args)
+                    self.result = self.execute(*args, **kwargs)
                     self.wasrun = True
             except Exception as e:
                 with tabbuffer():
@@ -198,37 +185,4 @@ class BaseStep:
             self.after_deps = list(deps) + self.after_deps
         else:
             self.after_deps.extend(deps)
-        return self
-
-    def bind(self, *args):
-        """Bind the arguments of the execute method. If an argument is an instance of BaseStep,
-        that argument will provide its `execute` result to the execute method of this class.
-        Evaluation of the `execute` method will be deferred until it is needed, and this step
-        will always be run after the dependencies have run.
-        """
-
-        sig = inspect.signature(self.execute)
-
-        if len(sig.parameters) != len(args):
-            raise ParameterLengthException(
-                f"{self} expects {len(sig.parameters)} but received {len(args)}"
-            )
-
-        for param_name, arg in zip(sig.parameters, args):
-            param = sig.parameters[param_name]
-            arg_getter = lambda arg=arg: arg
-            arg_type = type(arg)
-            if issubclass(type(arg), BaseStep) or type(arg) == Graph:
-                self.bind_deps.append(arg)
-                arg_getter = lambda arg=arg: arg.getResult()
-                arg_type = arg.getResultType()
-
-            if param.annotation != inspect._empty and arg_type != inspect._empty:
-                if not issubclass(arg_type, param.annotation):
-                    raise TypeMismatchException(
-                        f"Setup failed. Parameter {param_name} of {self} expects {param.annotation} but got {arg_type}"
-                    )
-
-            self.arg_getters.append(arg_getter)
-
         return self

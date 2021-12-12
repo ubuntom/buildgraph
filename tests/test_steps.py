@@ -263,3 +263,48 @@ def test_empty_graph():
 
     with pytest.raises(EmptyGraphException):
         getGraph()
+
+
+def test_default_arg():
+    class TestStep(BaseStep):
+        def execute(self, v=1):
+            return v
+
+    TestStep(5).run()
+
+
+def test_kwarg():
+    class TestStep(BaseStep):
+        def execute(self, v=1):
+            return v
+
+    TestStep(v=5).run()
+
+
+def test_extra_kwarg():
+    class TestStep(BaseStep):
+        def execute(self):
+            return 1
+
+    with pytest.raises(ParameterLengthException):
+        TestStep(v=5).run()
+
+
+def test_kwarg_only():
+    class TestStep(BaseStep):
+        def execute(self, *, v=5):
+            return v
+
+    TestStep(v=5).run()
+
+    with pytest.raises(ParameterLengthException):
+        TestStep(5).run()
+
+
+def test_var_args():
+    class TestStep(BaseStep):
+        def execute(self, *args, **kwargs):
+            print(args, kwargs)
+            return sum(args) + sum(kwargs.values())
+
+    assert TestStep(1, 2, 3, a=4, b=5).run() == 15
