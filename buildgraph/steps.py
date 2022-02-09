@@ -24,10 +24,10 @@ class CommandStep(BaseStep):
     class UnexpectedReturnCode(Exception):
         pass
 
-    def execute(self, command, args, expected_code=0):
+    def execute(self, command, *args, expected_code=0, **kwargs):
         loop = asyncio.get_event_loop()
 
-        output = loop.run_until_complete(execute_process_and_print(command, args))
+        output = loop.run_until_complete(execute_process_and_print(command, *args, **kwargs))
         results = CommandStep.Result(output[0], output[1], output[2])
 
         if expected_code is not None and results.code != expected_code:

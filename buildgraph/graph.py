@@ -96,6 +96,7 @@ def buildgraph():
 
             return Graph(func.__name__, root, ret)
 
+        wrapper.run = lambda *args, **kwargs: wrapper().run(*args, **kwargs)
         return wrapper
 
     return decorator

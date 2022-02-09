@@ -11,6 +11,7 @@ from buildgraph import (
 )
 from buildgraph.base_step import StepFailedException
 from buildgraph.graph import EmptyGraphException
+from buildgraph.steps import CommandStep
 
 
 class ReturnStep(BaseStep):
@@ -150,6 +151,14 @@ def test_graph_builder_ret_out_of_order():
     assert test.run() == 4
 
 
+def test_short_run():
+    @buildgraph()
+    def testGraph():
+        return ReturnStep(2)
+
+    assert testGraph.run() == 2
+
+
 def test_const_type_match():
     NeedsIntStep(5)
 
@@ -271,6 +280,7 @@ def test_default_arg():
             return v
 
     TestStep(5).run()
+    TestStep().run()
 
 
 def test_kwarg():
@@ -279,6 +289,7 @@ def test_kwarg():
             return v
 
     TestStep(v=5).run()
+
 
 
 def test_extra_kwarg():
@@ -308,3 +319,25 @@ def test_var_args():
             return sum(args) + sum(kwargs.values())
 
     assert TestStep(1, 2, 3, a=4, b=5).run() == 15
+
+def test_var_example():
+    class VarStep(BaseStep):
+        def execute(self, *args, x=0, **kwargs):
+            total = sum(args) + x + sum(kwargs.values())
+            print(total)
+
+    VarStep(1, 2, 3, x=4, y=5, z=6).run()
+
+
+def test_command_step():
+    result = CommandStep("echo", "Hi").run()
+
+    assert result.code == 0
+    assert result.stdout == b'Hi\n'
+
+def test_command_step_with_kwarg():
+    result = CommandStep("ls", cwd="tests").run()
+
+    assert result.code == 0
+    assert b'test_steps.py' in result.stdout
+

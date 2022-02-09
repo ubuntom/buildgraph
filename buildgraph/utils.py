@@ -25,7 +25,7 @@ async def handle_async_reader(reader, writer):
     return storage
 
 
-async def execute_process_and_print(command, args):
+async def execute_process_and_print(command, *args, **kwargs):
     """Execute command `command` with args `args` and log stdout and stderr as they're produced.
     Also record stdout and stderr to a buffer so they can be returned.
 
@@ -37,7 +37,7 @@ async def execute_process_and_print(command, args):
         Tuple(int, bytes, bytes): A tuple containing exit code, stdout log and stderr log
     """
     process = await asyncio.create_subprocess_exec(
-        command, *args, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE
+        command, *args, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE, **kwargs
     )
 
     stdout = handle_async_reader(process.stdout, sys.stdout.buffer.write)

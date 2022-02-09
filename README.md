@@ -14,6 +14,29 @@ Build Graph provides a set of tools to run build steps in order of their depende
 
 Build graphs can be constructed by hand, or you can let the library construct the graph for you.
 
+
+Here's an example of a graph:
+
+```python
+@buildgraph()
+def getGraph(prod=True):
+    RunTest("api")
+    RunTest("client")
+    package = BuildPackage(prod)
+    if prod:
+        UploadPackage(package)
+    else:
+        WritePackageToFile(package, "packages/")
+
+
+if __name__ == "__main__":
+    test_graph = getGraph(False, config={"code_root": "src"})
+    test_graph.printExecutionOrder()
+    test_graph.run()
+```
+
+
+
 In the following examples, we'll be using this step definition:
 ```python
 class Adder(BaseStep):
@@ -104,17 +127,34 @@ The `@buildgraph` decorator builds a graph where every node is reachable from th
 @buildgraph()
 def addergraph():
     a = Adder(0)
-    b = Adder(1)
-    c = Adder(2)
+    b = Adder(b)
+    c = Adder(c)
 
-addergraph().run()  # This will run all 3 steps
+addergraph.run()  # This will run all 3 steps
 ```
 
-If the steps don't have dependencies the execution order isn't guaranteed, but generally the steps that are defined first will be run first unless another dependency enforces a different order.
+If the steps don't have dependencies the execution order isn't guaranteed, but the steps that are defined first will be run first unless another dependency enforces a different order.
+
+
+### Returning from a graph
+
+Graphs can return results from a step too.
+
+```python
+@buildgraph()
+def addergraph():
+    a = Adder(0)
+    b = Adder(a)
+    return b
+
+result = addergraph().run() 
+print(result)  # 2
+```
+
 
 ### Parameterised graphs
 
-Graphs can take input which will be used to construct it
+Graphs can take input which will be used to construct it.
 
 ```python
 @buildgraph()
@@ -131,28 +171,59 @@ loopmany = loopinggraph(5)
 loopmany.run()  # 5
 ```
 
-
-### Returning from a graph
-
-Graphs can return results from a step too.
-
+Graphs which take no config or parameters can be run without explicitly building the graph first:
 ```python
 @buildgraph()
-def addergraph():
-    a = Adder(0)
-    b = Adder(a)
-    return b
+def simpleGraph():
+    return Adder(0)
 
-result = addergraph().run() 
-print(result)  # 1
+simpleGraph.run()  # simpleGraph is a config-less graph
+simpleGraph().run()  # These two lines are equivalent
+
+
+@buildgraph()
+def configGraph(n):
+    return Adder(n)
+
+configGraph(2).run()  # Graphs with config must be built by calling it as a function
 ```
 
+### Nested Graphs
+
+Graphs can be nested:
+```python
+
+@buildgraph()
+def getInnerGraph(p):
+    print(f"Building inner graph with input {p}")
+    return AppendAndPrint(p)
+
+@buildgraph()
+def getOuterGraph(p):
+    print(f"Building outer graph with input {p}")
+    inner1 = getInnerGraph(p, config={"namespace": "inner1"})
+    inner2 = getInnerGraph(inner1, config={"namespace": "inner2"})
+    outer = AppendAndPrint(proxy)
+    return outer
+```
 
 ## Extending steps
 
 All steps must inherit from `BaseStep` and implement an `execute` method.
 
-You can see example steps from `src/steps.py`. These steps can also be imported and used in code.
+You can see example steps from `buildgraph/steps.py`. These steps can also be imported and used in code.
+
+Steps can take variable positional and keyword arguments:
+
+```python
+class VarStep(BaseStep):
+    def execute(self, *args, x=0, **kwargs):
+        total = sum(args) + x + sum(kwargs.values())
+        print(total)
+
+VarStep(1, 2, 3, x=4, y=5, z=6).run()
+```
+
 
 ### Shared Config
 
