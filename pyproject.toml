@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "buildgraph"
-version = "0.0.4"
+version = "0.0.5"
 authors = ["ubuntom"]
 description = "Tools for building"
 homepage = "https://github.com/ubuntom/buildgraph"
