@@ -38,7 +38,9 @@ class TabulatedWriter:
 
 
 @contextmanager
-def tabbuffer(enable=True): # Some steps may choose to be untabulated, so this can be disabled
+def tabbuffer(
+    enable=True,
+):  # Some steps may choose to be untabulated, so this can be disabled
     if not enable:
         yield
         return

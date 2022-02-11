@@ -1,12 +1,13 @@
+import inspect
+
 from buildgraph import BaseStep, buildgraph
 
-import inspect
 print(inspect.getfile(BaseStep))
 
 
 class RunTest(BaseStep):
     def configure(self, config):
-        self.root = config['code_root']
+        self.root = config["code_root"]
 
     def execute(self, subDir, skip_integration=False):
         config = ""
@@ -14,6 +15,7 @@ class RunTest(BaseStep):
             config = " Skipping integration tests"
         print(f"Testing {self.root}/{subDir}/{config}")
         # Test code here
+
 
 class BuildPackage(BaseStep):
     def execute(self, prod):
@@ -23,15 +25,18 @@ class BuildPackage(BaseStep):
         package = f"builtpackage-{mode}"
         return package
 
+
 class UploadPackage(BaseStep):
     def execute(self, package):
         print(f"Uploading package {package}")
         # Upload code here
 
+
 class WritePackageToFile(BaseStep):
     def execute(self, package, destination):
         print(f"Copying package {package} to {destination}")
         # Copying code here
+
 
 @buildgraph()
 def getGraph(prod=True):

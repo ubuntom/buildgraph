@@ -37,11 +37,19 @@ async def execute_process_and_print(command, *args, suppress_log=False, **kwargs
         Tuple(int, bytes, bytes): A tuple containing exit code, stdout log and stderr log
     """
     process = await asyncio.create_subprocess_exec(
-        command, *args, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE, **kwargs
+        command,
+        *args,
+        stdout=asyncio.subprocess.PIPE,
+        stderr=asyncio.subprocess.PIPE,
+        **kwargs
     )
 
-    stdout = handle_async_reader(process.stdout, sys.stdout.buffer.write if not suppress_log else lambda x: None)
-    stderr = handle_async_reader(process.stderr, sys.stderr.buffer.write if not suppress_log else lambda x: None)
+    stdout = handle_async_reader(
+        process.stdout, sys.stdout.buffer.write if not suppress_log else lambda x: None
+    )
+    stderr = handle_async_reader(
+        process.stderr, sys.stderr.buffer.write if not suppress_log else lambda x: None
+    )
     results = await asyncio.gather(process.wait(), stdout, stderr)
 
     return results

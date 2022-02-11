@@ -291,7 +291,6 @@ def test_kwarg():
     TestStep(v=5).run()
 
 
-
 def test_extra_kwarg():
     class TestStep(BaseStep):
         def execute(self):
@@ -320,6 +319,7 @@ def test_var_args():
 
     assert TestStep(1, 2, 3, a=4, b=5).run() == 15
 
+
 def test_var_example():
     class VarStep(BaseStep):
         def execute(self, *args, x=0, **kwargs):
@@ -333,13 +333,14 @@ def test_command_step():
     result = CommandStep("echo", "Hi").run()
 
     assert result.code == 0
-    assert result.stdout == b'Hi\n'
+    assert result.stdout == b"Hi\n"
+
 
 def test_command_step_with_kwarg():
     result = CommandStep("ls", cwd="tests").run()
 
     assert result.code == 0
-    assert b'test_steps.py' in result.stdout
+    assert b"test_steps.py" in result.stdout
 
 
 def test_nested_graph_config():
@@ -353,6 +354,7 @@ def test_nested_graph_config():
 
     assert "NAME" in outer(config={"name": "NAME"}).run()
 
+
 def test_nested_override_graph_config():
     @buildgraph()
     def inner():
@@ -364,12 +366,14 @@ def test_nested_override_graph_config():
 
     assert "OVER" in outer(config={"name": "NAME"}).run()
 
+
 def test_suppress_log(capsys):
     CommandStep("echo", "HELLO", suppress_log=False).run()
     assert "HELLO" in capsys.readouterr().out
 
     CommandStep("echo", "HELLO", suppress_log=True).run()
     assert "HELLO" not in capsys.readouterr().out
+
 
 def test_indent(capsys):
     CommandStep("echo", "HELLO", indent_log=True).run()

@@ -1,6 +1,6 @@
 import functools
 
-from .context import addToContext, makeContext, getContext
+from .context import addToContext, getContext, makeContext
 
 
 class UndefinedConfig:
@@ -79,7 +79,9 @@ def buildgraph():
                 # This can happen if no steps were defined (e.g. the graph is used to process its inputs)
                 if not context.steps:
                     if not ret:
-                        raise EmptyGraphException("The graph has no steps, subgraphs and return values")
+                        raise EmptyGraphException(
+                            "The graph has no steps, subgraphs and return values"
+                        )
                     return ret
 
                 prev = context.steps[0]
