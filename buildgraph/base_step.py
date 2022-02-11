@@ -28,8 +28,10 @@ class BaseStep:
     Subclasses should implement an `execute` method.
     """
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, indent_log=False, **kwargs):
         self.config = None
+
+        self.indent_log = indent_log
 
         self.wasrun = False
         self.result = None
@@ -141,7 +143,7 @@ class BaseStep:
         print(f"{col.orange}Executing step {self}{col.clear}")
         with DurationTimer() as timer:
             try:
-                with tabbuffer():
+                with tabbuffer(self.indent_log):
                     self.result = self.execute(*args, **kwargs)
                     self.wasrun = True
             except Exception as e:

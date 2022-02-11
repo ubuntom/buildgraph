@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 
 import pytest
+import logging
 
 from buildgraph import (
     BaseStep,
@@ -341,3 +342,39 @@ def test_command_step_with_kwarg():
     assert result.code == 0
     assert b'test_steps.py' in result.stdout
 
+
+def test_nested_graph_config():
+    @buildgraph()
+    def inner():
+        return ConfigStep()
+
+    @buildgraph()
+    def outer():
+        return inner()
+
+    assert "NAME" in outer(config={"name": "NAME"}).run()
+
+def test_nested_override_graph_config():
+    @buildgraph()
+    def inner():
+        return ConfigStep()
+
+    @buildgraph()
+    def outer():
+        return inner(config={"name": "OVER"})
+
+    assert "OVER" in outer(config={"name": "NAME"}).run()
+
+def test_suppress_log(capsys):
+    CommandStep("echo", "HELLO", suppress_log=False).run()
+    assert "HELLO" in capsys.readouterr().out
+
+    CommandStep("echo", "HELLO", suppress_log=True).run()
+    assert "HELLO" not in capsys.readouterr().out
+
+def test_indent(capsys):
+    CommandStep("echo", "HELLO", indent_log=True).run()
+    assert "  HELLO" in capsys.readouterr().out
+
+    CommandStep("echo", "HELLO", indent_log=False).run()
+    assert "  HELLO" not in capsys.readouterr().out

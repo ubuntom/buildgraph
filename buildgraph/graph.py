@@ -1,6 +1,10 @@
 import functools
 
-from .context import addToContext, makeContext
+from .context import addToContext, makeContext, getContext
+
+
+class UndefinedConfig:
+    pass
 
 
 class EmptyGraphException(Exception):
@@ -66,7 +70,9 @@ def buildgraph():
 
     def decorator(func):
         @functools.wraps(func)
-        def wrapper(*args, config=None, **kwargs):
+        def wrapper(*args, config=UndefinedConfig, **kwargs):
+            if config == UndefinedConfig and getContext() is not None:
+                config = getContext().config
             with makeContext(config) as context:
                 ret = func(*args, **kwargs)
 

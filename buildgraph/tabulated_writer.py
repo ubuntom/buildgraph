@@ -38,7 +38,10 @@ class TabulatedWriter:
 
 
 @contextmanager
-def tabbuffer():
+def tabbuffer(enable=True): # Some steps may choose to be untabulated, so this can be disabled
+    if not enable:
+        yield
+        return
     with TabulatedWriter(sys.stderr.buffer, "write"):
         with TabulatedWriter(sys.stdout.buffer, "write"):
             yield
