@@ -76,29 +76,19 @@ def buildgraph():
             with makeContext(config) as context:
                 ret = func(*args, **kwargs)
 
-                # Get a set of all steps and graphs that are depended on
-                # by another step or graph
-                non_finals = set()
-                for step in context.steps:
-                    above = step.getFullExecution()
-                    above.remove(step)
-                    non_finals.update(above)
-
-                # Get a list of steps and graphs that are not depended on
-                # by another step or graph
-                finals = [step for step in context.steps if step not in non_finals]
-
                 # This can happen if no steps were defined (e.g. the graph is used to process its inputs)
-                if not finals:
-                    assert not context.steps
-                    if ret is None:
-                        raise EmptyGraphException("The graph has no steps or subgraphs")
+                if not context.steps:
+                    if not ret:
+                        raise EmptyGraphException("The graph has no steps, subgraphs and return values")
                     return ret
 
+                prev = context.steps[0]
+                for step in context.steps[1:]:
+                    step.after(prev)
+                    prev = step
+
                 # Pick the last defined final so that it's executed last
-                root = finals[-1]
-                for step in finals[:-1]:
-                    root.after(step)
+                root = context.steps[-1]
 
             return Graph(func.__name__, root, ret)
 

@@ -1,7 +1,6 @@
 from dataclasses import dataclass
 
 import pytest
-import logging
 
 from buildgraph import (
     BaseStep,
@@ -378,3 +377,17 @@ def test_indent(capsys):
 
     CommandStep("echo", "HELLO", indent_log=False).run()
     assert "  HELLO" not in capsys.readouterr().out
+
+
+def test_ordering():
+    @buildgraph()
+    def graph():
+        a = ReturnStep(0).alias("-A-")
+        ReturnStep(0).alias("-B-")
+        ReturnStep(a).alias("-C-")
+
+    order = graph().getExecutionOrder()
+
+    assert "-A-" in str(order[0])
+    assert "-B-" in str(order[1])
+    assert "-C-" in str(order[2])
