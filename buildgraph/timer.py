@@ -25,7 +25,7 @@ def format_time(seconds):
     """Returns a short string human readable duration (5 chars)
 
     Args:
-        seconds ([type]): [description]
+        seconds (float)
     """
 
     if seconds < 1:
@@ -37,10 +37,13 @@ def format_time(seconds):
     if seconds < 100:
         return f"{seconds:.1f}s"  # e.g. 85.2s
 
+    if seconds < 180:
+        return f"{seconds:4.0f}s"  # e.g.  152s
+
     minutes = seconds // 60
     seconds = seconds % 60
 
     if minutes < 100:
-        return f"{minutes:2}m{seconds:02}"
+        return f"{minutes:2.0f}m{seconds:02.0f}"
 
-    return f"{minutes:4}m"
+    return f"{minutes:4.0f}m"
