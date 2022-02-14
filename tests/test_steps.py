@@ -423,3 +423,11 @@ def test_graph_dict():
 
     assert graph.run() == 3
     assert subgraph.run() == {"a": 1, "b": 2}
+
+
+def test_implicit_decorator():
+    @buildgraph
+    def graph():
+        return AddStep(1, 2)
+
+    assert graph.run() == 3

@@ -103,7 +103,7 @@ class Graph:
         return getattr(self.root, attr)
 
 
-def buildgraph():
+def buildgraph(outer_func=None):
     """Builds a graph from a graph-defining function and returns the last step in that graph"""
 
     def decorator(func):
@@ -135,4 +135,7 @@ def buildgraph():
         wrapper.run = lambda *args, **kwargs: wrapper().run(*args, **kwargs)
         return wrapper
 
-    return decorator
+    if outer_func is None:
+        return decorator
+
+    return decorator(outer_func)
