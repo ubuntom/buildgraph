@@ -4,22 +4,10 @@ import traceback
 from .binding import Binding
 from .colours import colGetter as col
 from .context import addToContext, getContext
+from .exception import CircularDependencyException, StepFailedException, pass_exceptions
 from .graph import Graph
 from .tabulated_writer import tabbuffer
 from .timer import DurationTimer
-
-
-class CircularDependencyException(Exception):
-    pass
-
-
-class StepFailedException(Exception):
-    def __init__(self, step, exc, args):
-        super().__init__(str(step))
-
-        self.step = step
-        self.exc = exc
-        self.args = args
 
 
 class BaseStep:
@@ -160,6 +148,7 @@ class BaseStep:
         print(f"{col.green}Success{col.clear} [{timer.format()}]: {result_text}")
         print()
 
+    @pass_exceptions
     def run(self):
         # Get the order so that any loops will throw
         order = self.getExecutionOrder()

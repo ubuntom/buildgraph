@@ -1,13 +1,10 @@
 import functools
 
 from .context import addToContext, getContext, makeContext
+from .exception import EmptyGraphException, pass_exceptions
 
 
 class UndefinedConfig:
-    pass
-
-
-class EmptyGraphException(Exception):
     pass
 
 
@@ -35,6 +32,7 @@ class Graph:
     def __repr__(self):
         return f"<Graph {self.name}>"
 
+    @pass_exceptions
     def run(self):
         self.root.run()
         return self.getResult()
