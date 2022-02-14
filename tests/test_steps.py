@@ -395,3 +395,31 @@ def test_ordering():
     assert "-A-" in str(order[0])
     assert "-B-" in str(order[1])
     assert "-C-" in str(order[2])
+
+
+def test_graph_tuple():
+    @buildgraph()
+    def subgraph():
+        return ReturnStep(1), ReturnStep(2)
+
+    @buildgraph()
+    def graph():
+        a, b = subgraph()
+        return AddStep(a, b)
+
+    assert graph.run() == 3
+    assert subgraph.run() == [1, 2]
+
+
+def test_graph_dict():
+    @buildgraph()
+    def subgraph():
+        return {"a": ReturnStep(1), "b": ReturnStep(2)}
+
+    @buildgraph()
+    def graph():
+        r = subgraph()
+        return AddStep(r["a"], r["b"])
+
+    assert graph.run() == 3
+    assert subgraph.run() == {"a": 1, "b": 2}

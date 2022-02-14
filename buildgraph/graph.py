@@ -1,7 +1,9 @@
 import functools
+from collections.abc import Mapping, Sequence
 
+from . import base_step
 from .context import addToContext, getContext, makeContext
-from .exception import EmptyGraphException, pass_exceptions
+from .exception import EmptyGraphException, UnusableReturnType, pass_exceptions
 
 
 class UndefinedConfig:
@@ -19,15 +21,48 @@ class Graph:
          \ But return from B
     """
 
+    def has_single_result(self):
+        """Returns true if the graph has a single return value. If it returns a tuple of steps or other
+        type this returns false.
+        """
+        if type(self.result) == Graph or isinstance(self.result, base_step.BaseStep):
+            return True
+        return False
+
+    def map_results(self, func):
+        if isinstance(self.result, Mapping):
+            return {r: func(self.result[r]) for r in self.result}
+
+        if isinstance(self.result, Sequence):
+            return [func(r) for r in self.result]
+
+        raise UnusableReturnType(
+            f"Graph {self.name} has unusable return type {type(self.result)}"
+        )
+
+    @staticmethod
+    def assert_true(value):
+        assert value
+
     def __init__(self, name, root, result):
         self.name = name
         self.root = root
         self.result = Graph.resolveResultToStep(result)
 
-        if result is not None:
-            assert self.result in self.root.getExecutionOrder()
+        if self.result is not None:
+            execution_order = self.root.getExecutionOrder()
+            if self.has_single_result():
+                assert self.result in execution_order
+            else:
+                self.map_results(lambda r: self.assert_true(r in execution_order))
 
         addToContext(self)
+
+    def __iter__(self):
+        return iter(self.result)
+
+    def __getitem__(self, item):
+        return self.result[item]
 
     def __repr__(self):
         return f"<Graph {self.name}>"
@@ -38,9 +73,14 @@ class Graph:
         return self.getResult()
 
     def getResult(self):
+        """Executes and returns the result of this graph. First root.getResult() is called to execute the graph, then
+        returns the return value in the appropriate format"""
         self.root.getResult()
-        if self.result is not None:
+        if self.result is None:
+            return
+        if self.has_single_result():
             return self.result.getResult()
+        return self.map_results(lambda r: r.getResult())
 
     def getResultType(self):
         if self.result is None:

@@ -207,6 +207,21 @@ def getOuterGraph(p):
     return outer
 ```
 
+### Unpacking Return Types
+
+Graphs can return multiple values which can be unpacked:
+```python
+
+@buildgraph()
+def graph():
+    a = Adder(1)
+    b = Adder(a)
+    return a, b
+
+first, second = graph.run()
+```
+
+
 ## Extending steps
 
 All steps must inherit from `BaseStep` and implement an `execute` method.
